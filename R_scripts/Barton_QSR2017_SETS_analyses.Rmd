@@ -390,7 +390,7 @@ North Central Sub-region
 ```{r SPD NCent subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
 RR.dens.ncent <- with(subset(c14dates.agg,  subregion=="N Central"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
 
-plot(RR.dens.ncent, plotDates = F, fill="grey10", col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="N Central Region", xaxt = "n")
+plot(RR.dens.ncent, plotDates = F, col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="N Central Region", xaxt = "n", cex.main = 2, cex.lab = 1.5, cex.axis = 1.3)
 
 axis(side = 1, at = c(30000,19000,14000,10000))
 
@@ -405,7 +405,7 @@ Northeast Sub-region
 ```{r SPD NE subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
 RR.dens.ne <- with(subset(c14dates.agg,  subregion=="Northeast"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
 
-plot(RR.dens.ne, plotDates = F, col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Northeast Region", xaxt = "n")
+plot(RR.dens.ne, plotDates = F, col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Northeast Region", xaxt = "n", cex.main = 2, cex.lab = 1.5, cex.axis = 1.3)
 
 axis(side = 1, at = c(30000,19000,14000,10000))
 
@@ -420,7 +420,7 @@ Southwest Sub-region
 ```{r SPD SW subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
 RR.dens.sw <- with(subset(c14dates.agg,  subregion=="Southwest"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
 
-plot(RR.dens.sw, plotDates = F, col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Southwest Region", xaxt = "n")
+plot(RR.dens.sw, plotDates = F, col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Southwest Region", xaxt = "n", cex.main = 2, cex.lab = 1.5, cex.axis = 1.3)
 
 axis(side = 1, at = c(30000,19000,14000,10000))
 
@@ -435,7 +435,7 @@ Southeast Sub-region
 ```{r SPD SE subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
 RR.dens.se <- with(subset(c14dates.agg,  subregion=="Southeast"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
 
-plot(RR.dens.se, plotDates = F,  col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Southeast Region", xaxt = "n")
+plot(RR.dens.se, plotDates = F,  col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Southeast Region", xaxt = "n", cex.main = 2, cex.lab = 1.5, cex.axis = 1.3)
 
 axis(side = 1, at = c(30000,19000,14000,10000))
 
