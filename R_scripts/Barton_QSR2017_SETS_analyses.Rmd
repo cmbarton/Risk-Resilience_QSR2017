@@ -1,0 +1,489 @@
+---
+title: "SUPPLEMENTARY INFORMATION S2"
+
+subtitle: '**Risk and Resilience in the Late Glacial: a Case Study from the Western
+  Mediterranean**'
+  
+author: C Michael Barton, J Emili Aura Tortosa, Oreto Garcia-Puchol, Julien G Riel-Salvatore, Nicolas  Gauthier, Margarita Vadillo Conesa, & Geneviève Pothier-Bouchard
+  
+date: 'Last Updated: `r Sys.Date()`'
+
+mainfont: Times New Roman
+monofont: Monaco
+geometry: margin=1in
+fontsize: 12pt
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    theme: spacelab
+    toc: yes
+    toc_depth: 3
+    toc_float: true
+---
+\  
+
+
+This R Markdown script includes the workflow for all analyses used in the paper entitled **Risk and Resilience in the Late Glacial: a Case Study from the Western Mediterranean** (Michael Barton corresponding author), published in _Quaternary Science Reviews_, with exception of paleoclimate model analsyses. These are in a separate R Markdown document. 
+
+This R Markdown script requires R data files for assemblages, ice core data, faunal taxa counts, and radiocarbon dates, as well as a several R packages not included in the base distribution. These are all loaded by the Setup chunk below.  
+\  
+
+###Setup
+Load files and libraries
+```{r setup, message=FALSE}
+
+# R libraries needed
+require(ggplot2)
+require(ggrepel)
+require(ggthemes)
+require(ca)
+require(dplyr)
+require(Bchron)
+require(viridis)
+
+# Load files needed
+load(file="assemblages.rda")
+load(file="fauna.rda")
+load(file="ice.cores.rda")
+load(file="c14dates.rda")
+```
+\  
+
+###Ice Cores 
+
+This plots data from recalibrated GISP2 and NGRIP ice cores for the period of 30-5ka BP. It shows raw delta O18 values and LOESS trend lines for each of the two cores. 
+
+#### **Figure 1:** GISP2 and NGRIP2 delta O18 data and LOESS trends   
+(1000 x 600)
+\
+```{r ice cores, warning=FALSE, message=FALSE, fig.width=10, fig.height=6}
+ggplot(subset(ice.cores, years.BP<=30000 & years.BP>=5000)) + 
+  geom_line(aes(x=years.BP, y=d18O.GISP2.ppt), color='red', lwd=.2, alpha=.5) + 
+  geom_line(aes(x=years.BP, y=d18O.NGRIP2.ppt), color='blue', lwd=.2, alpha=.5) + 
+  geom_smooth(aes(x=years.BP, y=d18O.GISP2.ppt, color='gisp2', lty='gisp2'), method='loess', span=.1, se=FALSE) + 
+  geom_smooth(aes(x=years.BP, y=d18O.NGRIP2.ppt, color='ngrip2', lty='ngrip2'), method='loess', span=.1, se=FALSE)  + 
+  scale_colour_manual(name=NULL, values =c('gisp2'='red','ngrip2'='blue'), labels = c('GISP2','NGRIP2')) + 
+  scale_linetype_manual(name=NULL, values =c('gisp2'='dashed','ngrip2'='solid'), labels = c('GISP2','NGRIP2')) +
+  scale_x_continuous(breaks=c(19000,14000,10000), labels = c("19000","14000","10000"), trans = "reverse") + 
+  geom_vline(xintercept = c(19000,14000,10000), lty='dashed', lwd=0.3) + 
+  labs(x="\ncalibrated years BP", y="delta O18\ncolder << — >> warmer\n") + 
+  theme_bw(base_size = 16) + 
+  theme(legend.position="bottom", legend.key.size = unit(30, "points"))
+```
+\  
+
+####**Figure 2: ** *Maps created in GRASS GIS*  
+####**Figure 3-6: ** *Climate analysis in separate R Markdown document S3*  
+\  
+
+### Retouch, microliths, and LHI  
+
+Here we generate graphs of relationships betweeen artifact frequencies and faunal data, as well as changes in these metrics over time (in the four temporal periods) and across space (in the four subregions)
+
+#### **Figure 7a:** Retouch frequency vs. LHI: scatter plot and correlation analysis  
+LHI=1 excluded because small game not reported in most cases 
+(800x600 image)
+\  
+```{r retouch vs lhi, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+fit <- cor.test(~log(lg.herbivore.index) + log(retouch.freq), data=subset(assemblages, lg.herbivore.index<1.0 & retouched>0))   
+  
+corinfo <- paste("R =", round(fit$estimate, digits=2), "\np =", round(fit$p.value, digits=5))
+
+ggplot(subset(assemblages, retouched>0)) + 
+  geom_point(aes(x=lg.herbivore.index, y=retouch.freq, shape=subregion, color=subregion), size=4) + 
+  geom_point(data=subset(assemblages, lg.herbivore.index==1 & retouched>0), aes(x=lg.herbivore.index, y=retouch.freq), color="red", shape=1, size=7) + 
+  geom_smooth(data=subset(assemblages, lg.herbivore.index<1.0 & retouched>0), aes(x=lg.herbivore.index, y=retouch.freq), method="lm", se=T) + 
+  scale_y_continuous(trans = "log", breaks = c(0.05, 0.1, 0.5)) + 
+  scale_x_continuous(trans = 'log', breaks = c(0.1, 0.5, 1.0)) +
+  scale_shape_manual(values = c(15,16,17,8)) + 
+  labs(x="\nlarge herbivore index", y="retouch frequency\n", shape="sub-region\n", color="sub-region\n") + 
+  theme_bw(base_size = 20) + 
+  annotate("text", x=.05, y=.5, label=corinfo, size=5, hjust = 0)
+```
+\  
+
+
+#### **Figure 7b:** Microlith frequency vs LHI: scatter plot and correlation analysis
+LHI=1 excluded because small game not reported in most cases  
+(800x600 image) 
+\  
+```{r microliths vs. lhi, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+fit <- cor.test(~log(lg.herbivore.index) + log(backed.freq), data=subset(assemblages, lg.herbivore.index<1.0 & backed>0))
+
+corinfo <- paste("R =", round(fit$estimate, digits=2), "\np =", round(fit$p.value, digits=5))
+
+ggplot(subset(assemblages, backed>0)) + 
+  geom_point(aes(x=lg.herbivore.index, y=backed.freq, shape=subregion, color=subregion), size=4) + 
+  geom_point(data=subset(assemblages, lg.herbivore.index==1 & backed>0), aes(x=lg.herbivore.index, y=backed.freq), color="red", shape=1, size=7) + 
+  geom_smooth(data=subset(assemblages, lg.herbivore.index<1.0 & backed>0), aes(x=lg.herbivore.index, y=backed.freq), method="lm", se=T) + 
+  scale_y_continuous(trans = "log", breaks = c(0.05, 0.1, 0.5)) +   
+  scale_x_continuous(trans = 'log', breaks = c(0.1, 0.5, 1.0)) +
+  scale_shape_manual(values = c(15,16,17,8)) + 
+  labs(x="\nlarge herbivore index", y="microlith frequency\n", shape="sub-region\n", color="sub-region\n") + 
+  theme_bw(base_size = 20) + 
+  annotate("text", x=.05, y=.5, label=corinfo, size=5, hjust = 0)
+```
+\  
+
+
+###Retouch by Period and Region  
+
+#### **Figure 8:** Retouch Frequency by period (regions combined)  
+(900 x 600 image)  
+\  
+```{r retouch by period, warning=FALSE, fig.width=9, fig.height=6}
+ggplot(subset(assemblages, retouched>0)) + 
+  geom_boxplot(aes(x=period, y=retouch.freq), fill = "grey90", outlier.shape = NA, notch = T)  + 
+  geom_jitter(aes(x=period, y=retouch.freq), size=I(3), width=.2) + 
+  labs(x="", y="retouch frequency\n") + 
+  scale_x_discrete(labels=c("LGM", "Late\nPleniglacial", "End Glacial", "Holocene")) + 
+  theme_bw(base_size = 20) + 
+  guides(fill=FALSE)
+
+#ANOVA
+
+fit <- aov(formula = retouch.freq~period, data = subset(assemblages, retouched>0))
+summary(fit)
+```
+\  
+
+
+#### **Figure 9:** Retouch Frequency by period and region  
+(1000 x 800 image)  
+\  
+```{r Retouch frequency by period and region, warning=FALSE, fig.width=10, fig.height=8}
+ggplot(subset(assemblages, retouched>0)) + 
+  geom_boxplot(aes(x=period, y=retouch.freq), fill = "grey90", outlier.shape = NA)  + 
+  geom_jitter(aes(x=period, y=retouch.freq), size=I(3), width=.2) + 
+  labs(x="", y="retouch frequency\n") + 
+  scale_x_discrete(labels=c("LGM", "Late\nPleniglacial", "End\nGlacial", "Holocene")) + 
+  facet_wrap(~subregion, nrow = 2, ncol = 2) + 
+  theme_bw(base_size = 20) + 
+  guides(fill=FALSE)
+
+# ANOVA
+fit <- aov(formula = retouch.freq~period, data = subset(assemblages, subregion=="Southwest" & retouched>0))
+summary(fit)
+
+fit <- aov(formula = retouch.freq~period, data = subset(assemblages, subregion=="N Central" & retouched>0))
+summary(fit)
+
+fit <- aov(formula = retouch.freq~period, data = subset(assemblages, subregion=="Northeast" & retouched>0))
+summary(fit)
+
+fit <- aov(formula = retouch.freq~period, data = subset(assemblages, subregion=="Southeast" & retouched>0))
+summary(fit)
+```
+\  
+
+
+### Spatial Analysis
+
+Each assemblage is shown according to the shortest distance to the coastline during the temporal period during which the assemblage accumulated. Lithic (retouch frequency) and faunal data (large herbivore index) are shown spatially in this way same way. LOESS trend lines are superimposed on lithic and faunal data to make spatial trends more easily visible.
+
+#### **Figure 10:** All assemblages: LHI and retouch vs distance to coast  
+(1200 X 800 image)
+\  
+```{r distance to coast, warning=FALSE, message=FALSE, fig.width=9, fig.height=6}
+#order factors for proper plotting
+assemblages$period <- factor(assemblages$period, levels=c("Holocene", "End Glacial", "Late Pleniglacial", "LGM"))
+
+#plot
+ggplot() + 
+  geom_point(data=subset(assemblages, retouched>0 & lg.herbivore.index<1.0), aes(x=distcoast.contemp, y=lg.herbivore.index), size=3, shape = 17, color='blue') + 
+  geom_point(data=subset(assemblages, retouched>0 & lg.herbivore.index<1.0), aes(x=distcoast.contemp, y=retouch.freq), size=3, shape = 1, color='red') +
+  geom_smooth(data=subset(assemblages, retouched>0 & lg.herbivore.index<1.0), aes(x=distcoast.contemp, y=lg.herbivore.index), span=.5, se=F) + 
+  geom_smooth(data=subset(assemblages, retouched>0 & lg.herbivore.index<1.0), aes(x=distcoast.contemp, y=retouch.freq), method='loess', span=.4, se=F, color='red', lty='dashed') + 
+  scale_y_continuous(limits = c(0,1.1), breaks = c(0, .5, 1.0)) +
+  labs(x="\ndistance from contemporaneous coast (km)", y="large herbivore index (solid line and points)\nretouch frequency (dashed line & open points)\n") + 
+  theme_bw(base_size = 20)
+
+#reorder factors to correct order
+assemblages$period <- factor(assemblages$period, levels=c("LGM", "Late Pleniglacial", "End Glacial", "Holocene"))
+```
+\  
+
+
+### Hunting Practices from LHI and Diversity    
+
+Diversity data are only available for a subset of assemblages in which NISP for individual taxa are available. Because of inconsistencies in reporting non-mammalian taxa (e.g., birds, reptiles, amphibians, fish, shellfish), Inverse Simpson diversity indices are only computed for mammalian taxa. Diversity is plotted against LHI. 
+
+#### **Figure 11:** Diversity vs LHI  
+(800 x 600 image)  
+\  
+```{r diversity vs lhi, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}  
+ggplot(fauna) + 
+  geom_point(aes(x=lg.herbivore.index, y=invsimpson.mammal, color=subregion, shape=subregion), size=4) + 
+  scale_shape_manual(values = c(15,16,17,8)) + 
+  labs(x="\nlarge herbivore index", y="Inverse Simpson diversity index\nfor mammals\n", shape="sub-region\n", color="sub-region\n") +
+  theme_bw(base_size = 20)
+```  
+\  
+
+
+#### **Figure 12:** Diversity vs LHI by period  
+(800 x 900 image)  
+\
+```{r diversity vs lhi by period, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}  
+ggplot(subset(fauna, lg.herbivore.index<1.0)) + 
+  geom_point(aes(x=lg.herbivore.index, y=invsimpson.mammal), size=4) + 
+  labs(x="\nlarge herbivore index", y="Inverse Simpson diversity index\nfor mammals\n") + 
+  facet_grid(factor(period, levels=c("Holocene", "End Glacial", "Late Pleniglacial", "LGM")) ~ .) +
+  theme_bw(base_size = 20)
+```
+\  
+
+
+We use a violin plot here to more clearly indicate multimodality in the distribution of LHI values for each period. 
+
+#### **Figure 13:** LHI by period violin plot  
+(1000 x 800 image)  
+\
+```{r LHI by period violin plot, warning=FALSE, message=FALSE, fig.width=10, fig.height=8}
+ggplot(subset(assemblages, lg.herbivore.index<1.0 & !is.null(subregion))) + 
+  geom_violin(aes(x=period, y=lg.herbivore.index), fill = "grey90", scale = "width", adjust = .75, draw_quantiles = c(.5))  + 
+  geom_jitter(aes(x=period, y=lg.herbivore.index), size=3, width=.2) + 
+  labs(x="", y="large herbivore index\n") + 
+  scale_x_discrete(labels=c("LGM", "Late\nPleniglacial", "End\nGlacial", "Holocene")) + 
+  theme_bw(base_size = 20) + 
+  guides(fill=FALSE)
+```
+\  
+
+
+### Correspondence Analysis of French Faunal Data from North Central Sub-Region 
+
+Correspondence Analysis requires some preparation of the initial faunal data (NISP by taxa). Importantly, cases with missing values must be excluded to carry out this analysis here. 
+
+\  
+Prepare data set to use in CA 
+```{r CA analysis prep, warning=FALSE}
+# create matrix or data.frame with only numeric values and excluding rows with any NA values
+ffaunal.m <- na.exclude(subset(fauna, country=="France")[, c(13:42)])
+  
+# remove any columns that only contain 0's
+ffaunal.m <- ffaunal.m[,colSums(ffaunal.m != 0, na.rm=T) != 0]
+  
+# add site.unit (column 10) as row names
+row.names(ffaunal.m) <- na.omit(subset(fauna, country=="France")[, c(10, 13:42)])$site.unit
+```
+\  
+Run CA and add site.unit as rownames 
+```{r CA analysis, warning=FALSE}
+ffaunal.ca<-ca(ffaunal.m)
+ffaunal.ca$rownames <- rownames(ffaunal.m)
+```
+\  
+Parse CA output for graphing  
+```{r CA output for graphing, warning=FALSE}
+# create data.frame of variables (faunal taxa) and CA dimensions
+ffaunal.ca.taxa <- data.frame(ffaunal.ca$colcoord[,1:5],mass=ffaunal.ca$colmass, dist=ffaunal.ca$coldist, inertia=ffaunal.ca$colinertia, rel.contrib=summary(ffaunal.ca)$columns$cor)
+
+# create data.frame of rows (assemblages) and CA dimensions
+ffaunal.ca.assemblages <- data.frame(ffaunal.ca$rowcoord[,1:5], mass=ffaunal.ca$rowmass, dist=ffaunal.ca$rowdist, inertia=ffaunal.ca$rowinertia, rel.contrib=summary(ffaunal.ca)$rows$cor)
+
+# bind site information to CA results for sites
+ffaunal.ca.assemblages$site.unit <- as.character(rownames(ffaunal.ca.assemblages))
+
+ffaunal.ca.assemblages <- cbind(ffaunal.ca.assemblages, left_join(ffaunal.ca.assemblages, fauna, by = "site.unit")[, c(11:21, 62:77)])
+```
+\  
+
+
+#### **Figure 14:** Graph CA results - assemblages and faunal taxa in color  
+(1000 x 800 image)  
+
+Separate plots of CA results are shown for each of the four time periods. Taxa are indicated by circles and assemblages by triangles. The size of taxon circles is scaled by the contribution of that taxon to the CA dimensionality. Assemblage triangles are colored by the Inverse Simpson diversity index for that assemblage.
+
+\  
+```{r CA results graphs, warning=FALSE, message=FALSE, fig.width=10, fig.height=8}
+ggplot() + geom_point(data = subset(ffaunal.ca.assemblages, period.num==1), aes(x = Dim1, y=Dim2, fill=invsimpson.mammal), size=4, pch=24) + geom_point(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2, size=rel.contrib), pch=21, fill='grey') + geom_text_repel(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2), label=rownames(ffaunal.ca.taxa), size = 5, force = 2, segment.color = "grey50", color="black") + labs(x="\nCA dimension 1", y="CA dimension 2\n", title="Last Glacial Maximum", size="contribution\n(faunal taxa)\n", fill="diversity\n(assemblages)\n") + theme_bw(base_size = 20) + scale_fill_viridis(begin=0.3, end=.9, option = "A")
+
+ggplot() + geom_point(data = subset(ffaunal.ca.assemblages, period.num==2), aes(x = Dim1, y=Dim2, fill=invsimpson.mammal), size=4, pch=24) + geom_point(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2, size=rel.contrib), pch=21, fill='grey') + geom_text_repel(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2), label=rownames(ffaunal.ca.taxa)) + labs(x="\nCA dimension 1", y="CA dimension 2\n", title="Late Pleniglacial", size="contribution\n(faunal taxa)\n", fill="diversity\n(assemblages)\n") + theme_bw(base_size = 20) + scale_fill_viridis(begin=0.3, end=.9, option = "A")
+
+ggplot() + geom_point(data = subset(ffaunal.ca.assemblages, period.num==3), aes(x = Dim1, y=Dim2, fill=invsimpson.mammal), size=4, pch=24) + geom_point(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2, size=rel.contrib), pch=21, fill='grey') + geom_text_repel(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2), label=rownames(ffaunal.ca.taxa), size = 5, force = 2, segment.color = "grey50", color="black") + labs(x="\nCA dimension 1", y="CA dimension 2\n", title="End Glacial", size="contribution\n(faunal taxa)\n", fill="diversity\n(assemblages)\n") + theme_bw(base_size = 20) + scale_fill_viridis(begin=0.3, end=.9, option = "A")
+
+ggplot() + geom_point(data = subset(ffaunal.ca.assemblages, period.num==4), aes(x = Dim1, y=Dim2, fill=invsimpson.mammal), size=4, pch=24) + geom_point(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2, size=rel.contrib), pch=21, fill='grey') + geom_text_repel(data=ffaunal.ca.taxa, aes(x=Dim1, y=Dim2), label=rownames(ffaunal.ca.taxa), size = 5, force = 2, segment.color = "grey50", color="black") + labs(x="\nCA dimension 1", y="CA dimension 2\n", title="Initial Holocene", size="contribution\n(faunal taxa)\n", fill="diversity\n(assemblages)\n") + theme_bw(base_size = 20) + scale_fill_viridis(begin=0.3, end=.9, option = "A")
+```    
+\  
+
+
+### C14 Calibration and SPD Analyses
+\  
+
+Below are data filtering routines use to merge multiple dates for single proveniences. Dates with high uncertainty (CV>0.05) have already been removed from the dataset.
+
+#### Data preparation
+\  
+Average means and SD for proveniences with multiple dates  
+\  
+```{r create c14dates.agg, warning=FALSE, message=FALSE}
+c14.aggdates <- with(c14dates, aggregate(c14dates, by = list(site.unit), FUN = mean))
+c14dates.agg <- with(c14dates, aggregate(c14dates, by = list(site.unit), FUN = first))
+c14dates.agg$C14.mean <- round(c14.aggdates$C14.mean)
+c14dates.agg$C14.SD <- round(c14.aggdates$C14.SD)
+rm(c14.aggdates)
+```
+\  
+\  
+Calibrate dates for use with assemblages and/or fauna
+\  
+```{r calibrate dates, warning=FALSE, message=FALSE}
+c14calib.agg <- with(c14dates.agg, BchronCalibrate(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve))
+c14dates.agg$BP.cal.median <- sapply(1:length(c14calib.agg), function(x) round(median(c14calib.agg[[x]]$ageGrid) ))
+```
+\  
+
+
+#### **Figure 15A:** SPD of entire W. Mediterranean region with superimposed ice core LOESS curves  
+(1000 x 600 image)
+\  
+```{r SPD all Mediterranean, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
+RR.dens <- with(subset(c14dates.agg), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 20, store_density=TRUE))
+
+RR.ice.cores <- subset(ice.cores, years.BP<=30000 & years.BP>=5000)
+
+ggplot() + 
+  geom_line(aes(x=RR.dens$ageGrid, y=RR.dens$densities, color='age', lty='age'), lwd = 1) + 
+  geom_smooth(data = RR.ice.cores, aes(x=years.BP, y=d18O.GISP2.ppt*.00001+.0005, color='gisp2', lty='gisp2'), method='loess', span=.1, se=FALSE) + 
+  geom_smooth(data = RR.ice.cores, aes(x=years.BP, y=d18O.NGRIP2.ppt*.00001+.0005, color='ngrip2', lty='ngrip2'), method='loess', span=.1, se=FALSE)  + 
+  scale_colour_manual(name=NULL, values =c('age'='black','gisp2'='red','ngrip2'='blue'), labels = c('age density  ', 'GISP2 rescaled  ','NGRIP2 rescaled')) + 
+  scale_linetype_manual(name=NULL, values = c('age'='solid', 'gisp2'='dashed', 'ngrip2'='dashed'), labels = c('age density  ', 'GISP2 rescaled  ','NGRIP2 rescaled')) +
+  scale_x_continuous(limits = c(30000,5000), trans = "reverse", breaks = c(19000,14000,10000), labels = c("19000","14000","10000")) + 
+  geom_vline(xintercept = c(19000,14000,10000), lty='dashed', lwd=0.3) +
+  labs(x = "\nage - calibrated years BP", y = "density\n", title = "All Regions") + 
+  theme_bw(base_size = 20) + theme(legend.position="bottom", legend.key.size = unit(30, "points")) + 
+  annotate("text", x=29000, y=.00015, label = paste("N = ", nrow(c14dates.agg)), size=5, hjust = 0)
+```
+\  
+
+
+#### **Figure 15B:** Assemblage frequency per year by time period  
+\  
+Calculate assemblages by year for each time period
+\  
+```{r create c14dates.period, warning=FALSE, message=FALSE}
+c14dates.period <- as.data.frame(with(c14dates, table(period)))
+c14dates.period$period.length <- c(4000,4000,5000,10000)
+c14dates.period$period.center <- c(12000,8000,16500,24000)
+c14dates.period$freq.scaled <- c14dates.period$Freq/c14dates.period$period.length
+c14dates.period$period = factor(c14dates.period$period, levels=c("LGM", "Late Pleniglacial", "End Glacial", "Holocene"))
+```
+\  
+\  
+Histogram of dates by period
+(1000 x 400 image)  
+\  
+```{r histogram of dates, warning=FALSE, message=FALSE, fig.width=10, fig.height=4}
+ggplot(c14dates.period) + geom_bar(aes(x= period.center, y=freq.scaled, width=period.length), color='white', stat="identity", fill='grey50', position = "dodge") + scale_x_continuous(breaks=c(24000,16500,12000,8000), labels = c("LGM","Late\nPleniglacial","End\nGlacial", "Holocene"), trans = "reverse") +  labs(title="All Regions", x="\nperiod", y="assemblages per year\n") + theme_bw(base_size = 20)
+```
+\  
+
+
+#### **Figure 16:** SPD curves for each sub-region  
+(1000 x 600 images)
+\  
+North Central Sub-region  
+\  
+```{r SPD NCent subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
+RR.dens.ncent <- with(subset(c14dates.agg,  subregion=="N Central"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
+
+plot(RR.dens.ncent, plotDates = F, fill="grey10", col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="N Central Region", xaxt = "n")
+
+axis(side = 1, at = c(30000,19000,14000,10000))
+
+text(28000,.004, paste("N = ", nrow(subset(c14dates.agg,  subregion=="N Central"))))
+
+abline(v=c(19000, 14000, 10000), lty='dashed', col='grey50')
+
+```
+\  
+Northeast Sub-region  
+\  
+```{r SPD NE subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
+RR.dens.ne <- with(subset(c14dates.agg,  subregion=="Northeast"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
+
+plot(RR.dens.ne, plotDates = F, col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Northeast Region", xaxt = "n")
+
+axis(side = 1, at = c(30000,19000,14000,10000))
+
+text(28000,.004, paste("N = ", nrow(subset(c14dates.agg,  subregion=="Northeast"))))
+
+abline(v=c(19000, 14000, 10000), lty='dashed', col='grey50')
+
+```
+\  
+Southwest Sub-region  
+\  
+```{r SPD SW subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
+RR.dens.sw <- with(subset(c14dates.agg,  subregion=="Southwest"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
+
+plot(RR.dens.sw, plotDates = F, col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Southwest Region", xaxt = "n")
+
+axis(side = 1, at = c(30000,19000,14000,10000))
+
+text(28000,.0035, paste("N = ", nrow(subset(c14dates.agg,  subregion=="Southwest"))))
+
+abline(v=c(19000, 14000, 10000), lty='dashed', col='grey50')
+
+```
+\  
+Southeast Sub-region  
+\  
+```{r SPD SE subregion, warning=FALSE, message=FALSE, results="hide", fig.width=10, fig.height=6}
+RR.dens.se <- with(subset(c14dates.agg,  subregion=="Southeast"), BchronDensity(ages = C14.mean, ageSds = C14.SD, calCurves = calib.curve, numMix = 15, store_density=TRUE))
+
+plot(RR.dens.se, plotDates = F,  col="red", xlab="age - calibrated years BP", xlim = c(30000, 5000), lty=1, lwd=3, main="Southeast Region", xaxt = "n")
+
+axis(side = 1, at = c(30000,19000,14000,10000))
+
+text(28000,.003, paste("N = ", nrow(subset(c14dates.agg,  subregion=="Southeast"))))
+
+abline(v=c(19000, 14000, 10000), lty='dashed', col='grey50')
+
+```
+\  
+
+
+### Data management routines (optional)
+
+These are some additional data management routines used to create csv files for plotting on maps.
+
+#### Create dataframes of sites only for GIS  
+```{r}
+#assemblage_sites <- aggregate(assemblage_sites, by = list(assemblage_sites$site), FUN=max)
+#write.csv(assemblage_sites, file = "assemblage_sites.csv", row.names = F, fileEncoding = "UTF-8")
+
+#c14.sites <- aggregate(c14dates, by = list(c14dates$site), FUN=max)
+#c14.sites <- select(c14.sites, longitude, latitude, subregion, country, site)
+#write.csv(c14.sites, file = "c14sites.csv", row.names = F, fileEncoding = "UTF-8")
+```
+\  
+
+#### Set factor levels  
+
+If raw csv files are input, instead of R data files, it is necessary to set factor levels for time periods and geographic subregions so that all data plot correctly
+
+```{r}
+#assemblages$period <- factor(assemblages$period, levels=c("LGM", "Late Pleniglacial", "End Glacial", "Holocene"))
+#assemblages$subregion = factor(assemblages$subregion, levels=c("N Central", "Northeast", "Southwest", "Southeast"))
+#c14dates$period <- factor(c14dates$period, levels=c("LGM", "Late Pleniglacial", "End Glacial", "Holocene"))
+#c14dates$subregion = factor(c14dates$subregion, levels=c("N Central", "Northeast", "Southwest", "Southeast"))
+#fauna$period = factor(fauna$period, levels=c("LGM", "Late Pleniglacial", "End Glacial", "Holocene"))
+#ffaunal.ca.assemblages$period = factor(ffaunal.ca.assemblages$period, levels=c("LGM", "Late Pleniglacial", "End Glacial", "Holocene"))
+```
+\  
+
+
+#### Save R data files  
+
+This is only needed if changes are made to the data files that need to be saved for future use.
+
+```{r}
+#save(assemblages, file="assemblages.rda")
+#save(fauna, file="fauna.rda")
+#save(ice.cores, file="ice.cores.rda")
+#save(c14dates, file="c14dates.rda")
+```
